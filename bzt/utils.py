@@ -96,6 +96,21 @@ def replace_in_config(config, samples, substitutes, log=None):
     BetterDict.traverse(config, file_replacer)
 
 
+def replace_resource_paths(config, resources, substitutes, log=None):
+    def file_replacer(value, key, container):
+        for index, resource in enumerate(resources):
+            if not isinstance(value, string_types):
+                continue
+            if get_full_path(value) == get_full_path(resource):
+                container[key] = substitutes[index]
+                if container[key] != value and log:
+                    log.debug("Replaced %s with %s", value, container[key])
+                break
+
+    BetterDict.traverse(config, file_replacer)
+
+
+
 def dehumanize_time(str_time):
     """
     Convert value like 1d4h33m12s103ms into seconds

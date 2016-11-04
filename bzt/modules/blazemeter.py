@@ -40,7 +40,7 @@ from bzt.modules.console import WidgetProvider, PrioritizedWidget
 from bzt.modules.monitoring import Monitoring, MonitoringListener
 from bzt.modules.services import Unpacker
 from bzt.six import BytesIO, text_type, iteritems, HTTPError, urlencode, Request, urlopen, r_input, URLError
-from bzt.utils import open_browser, get_full_path, get_files_recursive, replace_in_config
+from bzt.utils import open_browser, get_full_path, get_files_recursive, replace_resource_paths
 from bzt.utils import to_json, dehumanize_time, MultiPartForm, BetterDict, ensure_is_dict
 
 
@@ -1602,7 +1602,7 @@ class MasterProvisioning(Provisioning):
                     raise TaurusConfigError(msg % base)
 
         prepared_files = self.__pack_dirs(rfiles)
-        replace_in_config(self.engine.config, rfiles, [os.path.basename(f) for f in prepared_files], log=self.log)
+        replace_resource_paths(self.engine.config, rfiles, [os.path.basename(f) for f in prepared_files], log=self.log)
 
         return prepared_files
 
@@ -1683,6 +1683,7 @@ class CloudProvisioning(MasterProvisioning, WidgetProvider):
         self._configure_client()
         self._filter_reporting()
 
+        rfiles = self.get_rfiles()
         finder = ProjectFinder(self.parameters, self.settings, self.client, self.log)
         finder.default_test_name = "Taurus Cloud Test"
         self.test = finder.resolve_test_type()
@@ -1690,7 +1691,7 @@ class CloudProvisioning(MasterProvisioning, WidgetProvider):
         config = self.test.prepare_cloud_config(self.engine.config)
         config.dump(self.engine.create_artifact("cloud", ""))
 
-        self.test.resolve_test(config, self.get_rfiles())
+        self.test.resolve_test(config, rfiles)
 
         self.widget = CloudProvWidget(self.test)
 

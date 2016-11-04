@@ -972,6 +972,41 @@ class TestCloudProvisioning(BZTestCase):
         res = CloudTaurusTest.cleanup_defaults(conf)
         self.assertEqual({"execution": [{}]}, res)
 
+    def test_resource_file_renaming(self):
+        obj = CloudProvisioning()
+        obj.engine = EngineEmul()
+
+        obj.engine.config.merge({
+            "execution": {
+                "executor": "selenium",
+                "concurrency": 5500,
+                "language": "python-nose",
+                "scenario": {
+                    "script": "tests/selenium/python/test_selenium_pass.py"
+                }
+            },
+            "modules": {
+                "selenium": "bzt.modules.selenium.SeleniumExecutor"
+            },
+        })
+
+        obj.parameters = obj.engine.config['execution']
+        obj.settings["token"] = "FakeToken"
+        obj.client = client = BlazeMeterClientEmul(obj.log)
+        client.results.append({"result": []})  # collections
+        client.results.append({"result": []})  # tests
+        client.results.append(self.__get_user_info())  # user
+        client.results.append({"result": {"id": id(client)}})  # create test
+        client.results.append({"files": []})  # create test
+        client.results.append({})  # upload files
+
+        obj.prepare()
+
+        cloud_conf = yaml.load(open(os.path.join(obj.engine.artifacts_dir, 'cloud.yml')))
+        scenario = cloud_conf['scenarios']['test_selenium_pass.py']
+        self.assertEqual(scenario['script'], 'test_selenium_pass.py')
+        logging.info(cloud_conf)
+
 
 class TestResultsFromBZA(BZTestCase):
     def test_simple(self):
